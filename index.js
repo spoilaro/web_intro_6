@@ -1,6 +1,31 @@
 import { Chart } from "frappe-charts/dist/frappe-charts.min.esm";
+import { textSpanEnd } from "typescript";
+
+const form = document.getElementById("area-form");
+
+const getArea = async () => {
+  const formData = new FormData(form);
+
+  const area_name = formData.get("area");
+
+  const res = await fetch(
+    "https://statfin.stat.fi/PxWeb/api/v1/en/StatFin/synt/statfin_synt_pxt_12dy.px"
+  );
+  const raw_data = await res.json();
+
+  const data = raw_data.variables[1];
+
+  const data_index = data.valueTexts.findIndex(
+    (element) => element == area_name
+  );
+
+  return data.values[data_index];
+};
 
 const getData = async () => {
+  const area = await getArea();
+  console.log(area);
+
   const query_data = {
     query: [
       {
@@ -37,7 +62,7 @@ const getData = async () => {
         code: "Alue",
         selection: {
           filter: "item",
-          values: ["SSS"],
+          values: [area],
         },
       },
       {
@@ -67,8 +92,6 @@ const getData = async () => {
 
   const raw_data = await res.json();
 
-  console.log(raw_data);
-
   return raw_data;
 };
 
@@ -78,9 +101,6 @@ const show_data = async () => {
   const values = raw_data.value;
   let labels = raw_data.dimension.Vuosi.category.label;
   labels = Object.keys(labels);
-
-  console.log(values.length);
-  console.log(labels.length);
 
   const data = {
     labels,
@@ -102,4 +122,7 @@ const show_data = async () => {
   });
 };
 
-show_data();
+form.addEventListener("submit", (event) => {
+  event.preventDefault();
+  show_data();
+});
